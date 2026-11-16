@@ -358,6 +358,20 @@ class AuditLogger:
         token = encrypted_line.strip().encode("ascii")
         return self._fernet.decrypt(token).decode("utf-8")
 
+    @property
+    def chain_head_hash(self) -> str:
+        """Returns the current cryptographic head hash of the audit hash chain."""
+        return self._last_hash
+
+    def verify_integrity(self, walk_segments: bool = False) -> tuple[bool, int, str | None]:
+        """Convenience instance method validating the cryptographic hash chain."""
+        return self.verify_ledger(
+            log_path=self.log_path,
+            encryption_key=self._raw_key,
+            hmac_key=self._hmac_key,
+            walk_segments=walk_segments,
+        )
+
     @classmethod
     def verify_ledger(
         cls,

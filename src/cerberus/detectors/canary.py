@@ -590,6 +590,10 @@ class CanaryDetector:
         with self._lock:
             return list(self._tamper_alerts)
 
+    def get_alerts(self) -> list[dict[str, Any]]:
+        """Return a copy of all recorded alerts (alias for get_tamper_alerts)."""
+        return self.get_tamper_alerts()
+
     def clear_tamper_alerts(self) -> None:
         """Clear the tamper alert log."""
         with self._lock:

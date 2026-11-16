@@ -33,7 +33,7 @@ from cerberus.detectors.dlp import EgressDLPDetector
 from cerberus.detectors.taint import TaintTracker
 from cerberus.policy.enforcer import EnforcementPipeline
 from cerberus.policy.synthesizer import PolicySynthesizer
-from cerberus.proxy.auth import HMACAuthenticator, TenantRateLimiter
+from cerberus.proxy.auth import AdminAuthManager, HMACAuthenticator, TenantRateLimiter
 from cerberus.proxy.challenge_manager import (
     ChallengeExpiredError,
     ChallengeManager,
@@ -47,11 +47,13 @@ from cerberus.proxy.metrics import (
     ACTIVE_QUARANTINES,
     REQUEST_COUNT,
     REQUEST_LATENCY,
+    MetricsCollector,
     get_metrics_payload,
 )
 from cerberus.proxy.models import EventDecision, ToolCallEvent
 from cerberus.proxy.redactor import SecretRedactor
 from cerberus.proxy.response_inspector import ResponseInspectionResult, ResponseInspector
+from cerberus.proxy.soc_routes import create_soc_router
 from cerberus.scanner.schema_pinner import SchemaPinner
 from cerberus.scanner.scope_analyzer import ScopeAnalyzer
 from cerberus.scanner.shadow_detector import ShadowDetector
@@ -152,6 +154,17 @@ class CerberusProxyEngine:
         self.pending_challenges: dict[str, dict[str, Any]] = {}
         self.redaction_counter: dict[str, int] = defaultdict(int)
         self.event_subscribers: set[asyncio.Queue] = set()
+
+        # SOC Platform Bindings & Aliases
+        self.auth_manager = self.authenticator
+        self.admin_auth_manager = AdminAuthManager(secret_key=settings.hmac_secret_key)
+        self.quarantine_sessions = self.quarantined_sessions
+        self.metrics_collector = MetricsCollector()
+        self.opa_client = getattr(self.enforcer, "opa_client", None)
+        if not self.opa_client:
+            from cerberus.policy.opa_client import OPAClient
+
+            self.opa_client = OPAClient()
 
     def broadcast_event(self, event_dict: dict[str, Any]) -> None:
         """Broadcast live event to all active SSE subscribers."""
@@ -694,6 +707,9 @@ app = FastAPI(
     version="1.0.0",  # BUG-L2 fix: unified version
     lifespan=lifespan,
 )
+
+# ── Mount Real Engine-Backed SOC Router ──────────────────────────────────────
+app.include_router(create_soc_router(engine))
 
 
 # ── Data API endpoints for React dashboard ──────────────────────────────────
@@ -1530,6 +1546,7 @@ async def mcp_proxy_gateway(
                 engine.shadow_detector.register_trusted(t_name, x_upstream_url)
 
             REQUEST_LATENCY.observe(duration)
+            engine.metrics_collector.record_latency(duration)
             REQUEST_COUNT.labels(tool_name="tools/list", decision="allow").inc()
             return {
                 "jsonrpc": "2.0",
@@ -1539,6 +1556,7 @@ async def mcp_proxy_gateway(
 
         # Default tools (no upstream)
         REQUEST_LATENCY.observe(duration)
+        engine.metrics_collector.record_latency(duration)
         REQUEST_COUNT.labels(tool_name="tools/list", decision="allow").inc()
         return {
             "jsonrpc": "2.0",
@@ -1592,6 +1610,7 @@ async def mcp_proxy_gateway(
 
     duration = time.perf_counter() - start_time
     REQUEST_LATENCY.observe(duration)
+    engine.metrics_collector.record_latency(duration)
     decision_label = event.decision.value if event.decision else "allow"
     REQUEST_COUNT.labels(tool_name=tool_name, decision=decision_label).inc()
 
@@ -1624,13 +1643,26 @@ if os.path.exists(_frontend_dist):
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="dashboard_assets")
 
-    @app.get("/")
-    @app.get("/ui")
-    @app.get("/ui/{full_path:path}")
-    @app.get("/dashboard")
-    @app.get("/dashboard/{full_path:path}")
-    async def serve_dashboard(full_path: str = ""):
+
+@app.get("/")
+@app.get("/features")
+@app.get("/architecture")
+@app.get("/threat-lab")
+@app.get("/docs")
+@app.get("/login")
+@app.get("/dashboard")
+@app.get("/dashboard/{full_path:path}")
+@app.get("/ui")
+@app.get("/ui/{full_path:path}")
+async def serve_dashboard(full_path: str = ""):
+    if os.path.exists(_frontend_dist):
         target = os.path.join(_frontend_dist, full_path)
         if full_path and os.path.isfile(target):
             return FileResponse(target)
-        return FileResponse(os.path.join(_frontend_dist, "index.html"))
+        index_file = os.path.join(_frontend_dist, "index.html")
+        if os.path.isfile(index_file):
+            return FileResponse(index_file)
+    return Response(
+        content="<!DOCTYPE html><html><head><title>Cerberus MCP Firewall</title></head><body><div id='root'></div></body></html>",
+        media_type="text/html",
+    )

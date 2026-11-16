@@ -3,60 +3,103 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --lavender-bg: #F5F3FF;
+    --lavender-card: #FFFFFF;
+    --lavender-border: #EDE9FE;
+    --lavender-brand: #6654E8;
+    --lavender-text: #171638;
+    --lavender-text-muted: #5B5882;
+  }
+
   body {
-    background-color: #05070B;
-    color: #F8FAFC;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F5F3FF;
+    color: #171638;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #05070B;
+  background: #F5F3FF;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 3px;
+  background: #DDD6FE;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #C4B5FD;
 }
 
-.tactical-grid {
+/* Lavender Tactical Grid Pattern */
+.lavender-grid {
   background-image: 
-    linear-gradient(to right, rgba(30, 41, 59, 0.22) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(30, 41, 59, 0.22) 1px, transparent 1px);
+    linear-gradient(to right, rgba(102, 84, 232, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(102, 84, 232, 0.05) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 
+.lavender-dots {
+  background-image: radial-gradient(rgba(102, 84, 232, 0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Dark Tactical Grid (backward compatibility) */
+.tactical-grid {
+  background-image: 
+    linear-gradient(to right, rgba(102, 84, 232, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(102, 84, 232, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Lavender Glass Panel */
+.glass-lavender {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(237, 233, 254, 0.9);
+}
+
+.glass-lavender-purple {
+  background: rgba(245, 243, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(221, 214, 254, 0.8);
+}
+
+/* Dark Glass Panel (backward compatibility) */
 .glass-panel {
-  background: rgba(10, 14, 23, 0.84);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid #EDE9FE;
+}
+
+/* Glow Effects */
+.glow-purple {
+  box-shadow: 0 0 24px -2px rgba(102, 84, 232, 0.35);
 }
 
 .glow-cyan {
-  box-shadow: 0 0 22px -4px rgba(0, 240, 255, 0.28);
+  box-shadow: 0 0 22px -4px rgba(2, 132, 199, 0.32);
 }
 
 .glow-taint {
-  box-shadow: 0 0 22px -4px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 22px -4px rgba(124, 58, 237, 0.35);
 }
 
 .glow-danger {
-  box-shadow: 0 0 22px -4px rgba(244, 63, 94, 0.35);
+  box-shadow: 0 0 22px -4px rgba(239, 68, 68, 0.35);
 }
 
 .glow-canary {
-  box-shadow: 0 0 22px -4px rgba(236, 72, 153, 0.35);
-}
-
-.glow-purple {
-  box-shadow: 0 0 22px -4px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 0 22px -4px rgba(219, 39, 119, 0.35);
 }
 
 .glow-warning {

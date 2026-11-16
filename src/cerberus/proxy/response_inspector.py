@@ -4,9 +4,11 @@ import copy
 import json
 import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from cerberus.proxy.models import EventDecision
@@ -457,6 +459,29 @@ class ResponseInspector:
     def get_session_violations(self, session_id: str) -> list[ResponseInspectionResult]:
         """Retrieve recorded injection violations for a session."""
         return list(self.session_violations.get(session_id, []))
+
+    def get_alerts(self) -> list[dict[str, Any]]:
+        """Retrieve all recorded response injection alerts across sessions."""
+        alerts: list[dict[str, Any]] = []
+        for sid, violations in self.session_violations.items():
+            for v in violations:
+                adj_verdict = v.adjudication.decision.value if v.adjudication else None
+                alerts.append({
+                    "alert_id": f"resp-{sid}-{len(alerts)}",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "alert_type": "RESPONSE_INJECTION_ALERT",
+                    "session_id": sid,
+                    "agent_id": getattr(v, "agent_id", "unknown"),
+                    "tool_name": v.tool_name or "unknown",
+                    "risk_score": v.risk_score,
+                    "reason": v.reason,
+                    "sanitized": v.was_redacted,
+                    "adjudicated": v.adjudication is not None,
+                    "adjudicator_verdict": adj_verdict,
+                    "match_count": len(v.matches),
+                    "detected_heuristics": v.detected_patterns,
+                })
+        return alerts
 
     # ── Text Scanning & Redaction ───────────────────────────────────────────
 
