@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, 
-  CheckCircle, 
-  XCircle, 
-  Play, 
-  Code, 
-  Layers, 
-  FileText, 
+import {
+  ShieldCheck,
+  CheckCircle,
+  XCircle,
+  Play,
+  Code,
+  Layers,
+  FileText,
   Sparkles,
   RefreshCw,
   AlertCircle
@@ -165,11 +165,10 @@ export const PolicyManagerView: React.FC = () => {
                   <div
                     key={p.policy_id}
                     onClick={() => setSelectedPolicy(p)}
-                    className={`p-3 rounded-xl border cursor-pointer font-mono text-xs transition-all ${
-                      isSelected
+                    className={`p-3 rounded-xl border cursor-pointer font-mono text-xs transition-all ${isSelected
                         ? 'bg-amber-950/30 border-amber-500/50 shadow-md'
                         : 'bg-soc-panel hover:bg-slate-800/60 border-soc-border'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-amber-300">{p.policy_id}</span>
@@ -198,11 +197,10 @@ export const PolicyManagerView: React.FC = () => {
                 <div
                   key={p.path || p.name}
                   onClick={() => setSelectedPolicy(p)}
-                  className={`p-3 rounded-xl border cursor-pointer font-mono text-xs transition-all ${
-                    isSelected
+                  className={`p-3 rounded-xl border cursor-pointer font-mono text-xs transition-all ${isSelected
                       ? 'bg-cyan-950/30 border-cyan-500/50 shadow-md'
                       : 'bg-soc-panel hover:bg-slate-800/60 border-soc-border'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-200">{p.name}</span>
@@ -228,12 +226,11 @@ export const PolicyManagerView: React.FC = () => {
                     <h3 className="text-base font-bold font-mono text-white">
                       {selectedPolicy.policy_id || selectedPolicy.name}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${
-                      selectedPolicy.type === 'pending'
+                    <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${selectedPolicy.type === 'pending'
                         ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
                         : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                    }`}>
-                      {selectedPolicy.type.toUpperCase()}
+                      }`}>
+                      {selectedPolicy.type?.toUpperCase() || 'ACTIVE'}
                     </span>
                   </div>
                   {selectedPolicy.agent_id && (

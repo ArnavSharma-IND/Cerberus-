@@ -1624,6 +1624,7 @@ if os.path.exists(_frontend_dist):
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="dashboard_assets")
 
+    @app.get("/")
     @app.get("/ui")
     @app.get("/ui/{full_path:path}")
     @app.get("/dashboard")

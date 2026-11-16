@@ -5,6 +5,28 @@ export interface ModelScores {
   transformer: number;
 }
 
+export interface TaintLineageHop {
+  hop: number;
+  source_type: 'UNTRUSTED_WEB' | 'UNTRUSTED_EXTERNAL' | 'PROPAGATED_TOOL' | 'EGRESS_SINK';
+  tool_name: string;
+  sha256_hash: string;
+  parent_hash?: string | null;
+  parameter_key: string;
+  timestamp: string;
+}
+
+export interface ResponseInspectionDetail {
+  inspected: boolean;
+  risk_score: number;
+  sanitized: boolean;
+  detected_heuristics: string[];
+  adjudicated: boolean;
+  adjudicator_verdict?: 'ALLOW' | 'CHALLENGE' | 'BLOCK' | null;
+  confidence?: number;
+  original_snippet?: string;
+  sanitized_snippet?: string;
+}
+
 export interface ToolCallEvent {
   event_id: string;
   session_id: string;
@@ -20,6 +42,7 @@ export interface ToolCallEvent {
   session_duration_ms?: number | null;
   sequence_position: number;
   risk_score?: number | null;
+  raw_anomaly_score?: number | null;
   risk_factors: string[];
   decision?: 'allow' | 'flag' | 'challenge' | 'block' | 'quarantine' | null;
   decision_reason?: string | null;
@@ -28,6 +51,15 @@ export interface ToolCallEvent {
   model_scores?: ModelScores;
   owasp_tags?: string[];
   rule_fired?: string | null;
+  // 5-Pillar Enriched Telemetry Fields
+  taint_tags?: string[];
+  taint_hashes?: string[];
+  taint_lineage?: TaintLineageHop[];
+  dlp_violation?: boolean;
+  dlp_findings?: { category: string; snippet: string; path: string }[];
+  canary_tripped?: boolean;
+  canary_token_id?: string;
+  response_inspection?: ResponseInspectionDetail;
 }
 
 export interface SessionSummary {
@@ -122,7 +154,11 @@ export interface ChallengeItem {
   expires_at: number;
   timeout_seconds?: number;
   step_up_token?: string;
+  hmac_signature?: string;
+  nonce?: string;
+  operator_binding?: string;
   webhook_dispatched?: boolean;
+  webhook_channels?: string[];
   status: 'pending' | 'approved' | 'rejected' | 'expired';
   parameters?: Record<string, any>;
   resolved_by?: string;
@@ -182,8 +218,6 @@ export interface BenchmarkResults {
   }[];
 }
 
-// ── Industry-Grade Security Feature Interfaces ──────────────────────────────
-
 export interface TaintProvenanceNode {
   step: number;
   session_id: string;
@@ -193,6 +227,10 @@ export interface TaintProvenanceNode {
   timestamp: string;
   matched_tag_ids: string[];
   matched_parameters: string[];
+  sha256_hash?: string;
+  parent_hash?: string | null;
+  anomaly_score?: number;
+  enforced_score?: number;
   details?: string;
 }
 
@@ -214,6 +252,8 @@ export interface CanaryTokenRecord {
   description: string;
   metadata?: Record<string, any>;
   status?: 'ARMED' | 'TRIPPED';
+  hit_count?: number;
+  sha256_fingerprint?: string;
 }
 
 export interface CanaryAlert {
@@ -267,10 +307,12 @@ export interface DLPAlert {
 
 export interface ResponseViolation {
   session_id: string;
+  tool_name?: string;
   risk_score: number;
   reason: string;
   sanitized: boolean;
   match_count: number;
+  detected_heuristics?: string[];
   adjudicated: boolean;
   adjudicator_verdict?: string | null;
   confidence?: number;
