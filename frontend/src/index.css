@@ -27,20 +27,23 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: #F5F3FF;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #DDD6FE;
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #C4B5FD;
 }
 
 /* Lavender Tactical Grid Pattern */
 .lavender-grid {
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(102, 84, 232, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(102, 84, 232, 0.05) 1px, transparent 1px);
   background-size: 28px 28px;
@@ -53,7 +56,7 @@
 
 /* Dark Tactical Grid (backward compatibility) */
 .tactical-grid {
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(102, 84, 232, 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(102, 84, 232, 0.06) 1px, transparent 1px);
   background-size: 28px 28px;
@@ -128,7 +131,7 @@ html.dark {
 }
 
 .dark .lavender-grid {
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(139, 92, 246, 0.07) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(139, 92, 246, 0.07) 1px, transparent 1px) !important;
 }
@@ -217,4 +220,3 @@ html.dark {
   border-color: #8B5CF6;
   outline: none;
 }
-

@@ -90,10 +90,10 @@ export const PublicLayout: React.FC = () => {
             </button>
 
             <a
-              href="https://github.com/google/cerberus"
+              href="https://github.com/Debddj/Cerberus"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-[#5B5882] hover:text-[#171638] hover:bg-[#EDE9FE] rounded-lg transition-colors hidden sm:flex items-center gap-1.5 text-xs font-medium"
+              className="p-2 text-[#5B5882] hover:text-[#171638] dark:text-slate-400 dark:hover:text-white hover:bg-[#EDE9FE] dark:hover:bg-slate-800 rounded-lg transition-colors hidden sm:flex items-center gap-1.5 text-xs font-medium border border-transparent hover:border-[#DDD6FE] dark:hover:border-slate-700"
             >
               <Github className="w-4 h-4" />
               <span>GitHub</span>
@@ -136,9 +136,18 @@ export const PublicLayout: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <NavLink to="/docs" className="hover:text-[#171638]">Documentation</NavLink>
-            <NavLink to="/threat-lab" className="hover:text-[#171638]">Threat Lab</NavLink>
-            <NavLink to="/dashboard" className="hover:text-[#171638]">SOC Console</NavLink>
+            <NavLink to="/docs" className="hover:text-[#171638] dark:hover:text-white">Documentation</NavLink>
+            <NavLink to="/threat-lab" className="hover:text-[#171638] dark:hover:text-white">Threat Lab</NavLink>
+            <NavLink to="/dashboard" className="hover:text-[#171638] dark:hover:text-white">SOC Console</NavLink>
+            <a
+              href="https://github.com/Debddj/Cerberus"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#171638] dark:hover:text-white flex items-center gap-1"
+            >
+              <Github className="w-3.5 h-3.5" />
+              <span>GitHub</span>
+            </a>
           </div>
         </div>
       </footer>
