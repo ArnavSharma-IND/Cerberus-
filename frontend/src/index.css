@@ -62,21 +62,22 @@
 /* Lavender Glass Panel */
 .glass-lavender {
   background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(237, 233, 254, 0.9);
 }
 
 .glass-lavender-purple {
   background: rgba(245, 243, 255, 0.85);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(221, 214, 254, 0.8);
 }
 
 /* Dark Glass Panel (backward compatibility) */
 .glass-panel {
   background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid #EDE9FE;
 }
