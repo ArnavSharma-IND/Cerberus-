@@ -465,21 +465,23 @@ class ResponseInspector:
         for sid, violations in self.session_violations.items():
             for v in violations:
                 adj_verdict = v.adjudication.decision.value if v.adjudication else None
-                alerts.append({
-                    "alert_id": f"resp-{sid}-{len(alerts)}",
-                    "timestamp": datetime.now(UTC).isoformat(),
-                    "alert_type": "RESPONSE_INJECTION_ALERT",
-                    "session_id": sid,
-                    "agent_id": getattr(v, "agent_id", "unknown"),
-                    "tool_name": v.tool_name or "unknown",
-                    "risk_score": v.risk_score,
-                    "reason": v.reason,
-                    "sanitized": v.was_redacted,
-                    "adjudicated": v.adjudication is not None,
-                    "adjudicator_verdict": adj_verdict,
-                    "match_count": len(v.matches),
-                    "detected_heuristics": v.detected_patterns,
-                })
+                alerts.append(
+                    {
+                        "alert_id": f"resp-{sid}-{len(alerts)}",
+                        "timestamp": datetime.now(UTC).isoformat(),
+                        "alert_type": "RESPONSE_INJECTION_ALERT",
+                        "session_id": sid,
+                        "agent_id": getattr(v, "agent_id", "unknown"),
+                        "tool_name": v.tool_name or "unknown",
+                        "risk_score": v.risk_score,
+                        "reason": v.reason,
+                        "sanitized": v.was_redacted,
+                        "adjudicated": v.adjudication is not None,
+                        "adjudicator_verdict": adj_verdict,
+                        "match_count": len(v.matches),
+                        "detected_heuristics": v.detected_patterns,
+                    }
+                )
         return alerts
 
     # ── Text Scanning & Redaction ───────────────────────────────────────────

@@ -244,27 +244,24 @@ export const DashboardLayout: React.FC = () => {
                 <NavLink
                   key={item.id}
                   to={item.path}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all group ${
-                    isActive
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all group ${isActive
                       ? 'bg-lavender-600 text-white shadow-lavender shadow-sm font-semibold'
                       : 'text-lavender-text-secondary hover:text-lavender-900 hover:bg-lavender-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon
-                      className={`w-4 h-4 transition-colors ${
-                        isActive ? 'text-white' : 'text-lavender-400 group-hover:text-lavender-600'
-                      }`}
+                      className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'text-lavender-400 group-hover:text-lavender-600'
+                        }`}
                     />
                     <span>{item.name}</span>
                   </div>
                   {item.badgeCount !== undefined && item.badgeCount > 0 && (
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        isActive
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive
                           ? 'bg-white/20 text-white'
                           : 'bg-amber-100 text-amber-800'
-                      }`}
+                        }`}
                     >
                       {item.badgeCount}
                     </span>
@@ -340,11 +337,10 @@ export const DashboardLayout: React.FC = () => {
                       key={item.id}
                       to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium ${
-                        isActive
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium ${isActive
                           ? 'bg-lavender-600 text-white'
                           : 'text-lavender-text-secondary hover:bg-lavender-50'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <Icon className="w-4 h-4" />

@@ -256,9 +256,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                         sorted(baseline.known_tools) if baseline.known_tools else scopes
                     ),
                     "known_destinations": (
-                        sorted(baseline.known_destinations)
-                        if baseline.known_destinations
-                        else []
+                        sorted(baseline.known_destinations) if baseline.known_destinations else []
                     ),
                     "call_count": engine.agent_call_counters.get(aid, len(history)),
                 }
@@ -690,14 +688,18 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                     "severity": "CRITICAL",
                     "pillar": "TAINT",
                     "title": "Untrusted Provenance Egress Exfiltration Attempt",
-                    "description": ta.get("reason", "Tainted provenance tag flowed into egress sink"),
+                    "description": ta.get(
+                        "reason", "Tainted provenance tag flowed into egress sink"
+                    ),
                     "timestamp": ta.get("timestamp", datetime.now(UTC).isoformat()),
                     "session_id": ta.get("session_id"),
                     "agent_id": ta.get("agent_id"),
                     "tool_name": ta.get("tool_name"),
                     "status": "ACTIVE",
                     "risk_score": 1.0,
-                    "indicators": ta.get("factors", ["Untrusted provenance tag detected on egress sink"]),
+                    "indicators": ta.get(
+                        "factors", ["Untrusted provenance tag detected on egress sink"]
+                    ),
                     "remediation": "Session isolated and tainted egress sink blocked.",
                     "reason": ta.get("reason"),
                     "details": ta,
@@ -715,14 +717,19 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                     "severity": "CRITICAL",
                     "pillar": "CANARY",
                     "title": "Honeytoken Credential Compromise (ASI10)",
-                    "description": ca.get("threat_category", "Planted honeytoken credential compromised"),
+                    "description": ca.get(
+                        "threat_category", "Planted honeytoken credential compromised"
+                    ),
                     "timestamp": ca.get("timestamp", datetime.now(UTC).isoformat()),
                     "session_id": ca.get("session_id"),
                     "agent_id": ca.get("agent_id"),
                     "tool_name": ca.get("tool_name"),
                     "status": "QUARANTINED",
                     "risk_score": 1.0,
-                    "indicators": [f"Token: {ca.get('token_label', 'canary')}", f"Location: {ca.get('location', 'parameters')}"],
+                    "indicators": [
+                        f"Token: {ca.get('token_label', 'canary')}",
+                        f"Location: {ca.get('location', 'parameters')}",
+                    ],
                     "remediation": "Session immediately quarantined. Decoy credential revoked.",
                     "reason": ca.get("threat_category", "Honeytoken compromised"),
                     "details": ca,
@@ -765,14 +772,18 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                     "severity": "HIGH",
                     "pillar": "SHIELD",
                     "title": "Indirect Prompt Injection in Tool Response",
-                    "description": ra.get("reason", "Adversarial delimiter or instruction tags stripped"),
+                    "description": ra.get(
+                        "reason", "Adversarial delimiter or instruction tags stripped"
+                    ),
                     "timestamp": ra.get("timestamp", datetime.now(UTC).isoformat()),
                     "session_id": ra.get("session_id"),
                     "agent_id": ra.get("agent_id"),
                     "tool_name": ra.get("tool_name"),
                     "status": "RESOLVED",
                     "risk_score": ra.get("risk_score", 0.94),
-                    "indicators": ra.get("detected_heuristics", ["Indirect prompt injection neutralized"]),
+                    "indicators": ra.get(
+                        "detected_heuristics", ["Indirect prompt injection neutralized"]
+                    ),
                     "remediation": "Tool response sanitized before reflection to model context.",
                     "reason": ra.get("reason"),
                     "details": ra,
