@@ -105,3 +105,115 @@
 .glow-warning {
   box-shadow: 0 0 22px -4px rgba(245, 158, 11, 0.35);
 }
+
+/* =========================================================================
+   DARK MODE OVERRIDES & LEGIBILITY ENHANCEMENTS
+   Ensures dark tabs, cards, tables, and controls maintain high-contrast
+   outlines, legible typography, and distinct elevation in dark mode.
+   ========================================================================= */
+
+html.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #080C14;
+  color: #F8FAFC;
+}
+
+.dark .bg-lavender-50,
+.dark .bg-\[\#F5F3FF\] {
+  background-color: #080C14 !important;
+}
+
+.dark .lavender-grid {
+  background-image: 
+    linear-gradient(to right, rgba(139, 92, 246, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(139, 92, 246, 0.07) 1px, transparent 1px) !important;
+}
+
+.dark .bg-white {
+  background-color: #0F172A !important;
+}
+
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: rgba(15, 23, 42, 0.94) !important;
+}
+
+.dark .border-lavender-100,
+.dark .border-\[\#EDE9FE\] {
+  border-color: #1E293B !important;
+}
+
+.dark .border-lavender-200,
+.dark .border-\[\#DDD6FE\] {
+  border-color: #334155 !important;
+}
+
+.dark .text-lavender-900,
+.dark .text-\[\#171638\] {
+  color: #F8FAFC !important;
+}
+
+.dark .text-lavender-text-secondary,
+.dark .text-\[\#5B5882\] {
+  color: #94A3B8 !important;
+}
+
+.dark .text-lavender-text-muted,
+.dark .text-\[\#8E8AA7\] {
+  color: #64748B !important;
+}
+
+.dark .bg-lavender-100,
+.dark .bg-\[\#EDE9FE\] {
+  background-color: #1E293B !important;
+}
+
+.dark .bg-lavender-200 {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-lavender-50:hover {
+  background-color: #1E293B !important;
+}
+
+.dark .hover\:bg-lavender-100:hover {
+  background-color: #334155 !important;
+}
+
+/* Distinct contrast for darkish tabs and dark surfaces */
+.dark .bg-slate-900,
+.dark .bg-slate-950,
+.dark .bg-\[\#171638\] {
+  background-color: #131B2E !important;
+  border-color: rgba(167, 139, 250, 0.25) !important;
+}
+
+.dark .border-slate-800 {
+  border-color: #1E293B !important;
+}
+
+.dark .shadow-lavender,
+.dark .shadow-lavender-sm,
+.dark .shadow-lavender-md {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Input fields & select dropdowns in dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0F172A;
+  color: #F8FAFC;
+  border-color: #334155;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #8B5CF6;
+  outline: none;
+}
+

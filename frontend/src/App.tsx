@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { TelemetryProvider } from './context/TelemetryContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { PublicLayout } from './components/layout/PublicLayout';
 
@@ -34,10 +35,11 @@ import {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <TelemetryProvider>
-          <BrowserRouter>
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <TelemetryProvider>
+            <BrowserRouter>
             <Routes>
               {/* Public Website Routes */}
               <Route element={<PublicLayout />}>
@@ -73,7 +75,8 @@ export const App: React.FC = () => {
         </TelemetryProvider>
       </ToastProvider>
     </AuthProvider>
-  );
+  </ThemeProvider>
+);
 };
 
 export default App;

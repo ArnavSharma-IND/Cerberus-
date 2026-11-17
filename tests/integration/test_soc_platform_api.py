@@ -153,7 +153,7 @@ async def test_soc_event_breakdown(client: AsyncClient):
     session_id = "soc-forensic-sess-01"
     agent_id = "forensic-agent"
 
-    event, outcome = await engine.process_tool_call(
+    event, _outcome = await engine.process_tool_call(
         session_id=session_id,
         agent_id=agent_id,
         tool_name="read_file",
@@ -425,6 +425,7 @@ async def test_soc_system_config(client: AsyncClient):
 
     # 2. Update config dynamically
     orig_rate = settings.rate_limit_per_minute
+    orig_scope_mode = settings.scope_enforcement_mode
     try:
         put_res = await client.put(
             "/api/system/config",
@@ -438,7 +439,8 @@ async def test_soc_system_config(client: AsyncClient):
         assert engine.scope_analyzer.mode == "strict"
     finally:
         settings.rate_limit_per_minute = orig_rate
-        engine.scope_analyzer.mode = "learn"
+        settings.scope_enforcement_mode = orig_scope_mode
+        engine.scope_analyzer.mode = orig_scope_mode
 
 
 # ── 11. Public & SPA Static Routes Tests ─────────────────────────────────────

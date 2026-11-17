@@ -1,11 +1,13 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Shield, ExternalLink, ArrowRight, Github } from 'lucide-react';
+import { Shield, ExternalLink, ArrowRight, Github, Sun, Moon } from 'lucide-react';
 import { CerberusLogo } from '../brand/CerberusLogo';
 import { Button } from '../ui/Button';
+import { useTheme } from '../../context/ThemeContext';
 
 export const PublicLayout: React.FC = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   return (
     <div className="min-h-screen bg-[#F5F3FF] text-[#171638] flex flex-col font-sans selection:bg-[#6654E8]/20 selection:text-[#171638]">
@@ -72,7 +74,21 @@ export const PublicLayout: React.FC = () => {
           </nav>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to Lavender mode' : 'Switch to Dark mode'}
+              className="p-2 text-[#5B5882] hover:text-[#171638] dark:text-slate-400 dark:hover:text-white hover:bg-[#EDE9FE] dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-center border border-transparent hover:border-[#DDD6FE] dark:hover:border-slate-700"
+              title={isDark ? 'Switch to Lavender Theme' : 'Switch to Dark Theme'}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-4 h-4 text-[#6654E8] transition-transform hover:-rotate-12" />
+              )}
+            </button>
+
             <a
               href="https://github.com/google/cerberus"
               target="_blank"

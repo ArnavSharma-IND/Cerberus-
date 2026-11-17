@@ -21,10 +21,13 @@ import {
   ChevronRight,
   Menu,
   X,
-  Lock
+  Lock,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTelemetry } from '../../context/TelemetryContext';
+import { useTheme } from '../../context/ThemeContext';
 import { CerberusLogo } from '../brand/CerberusLogo';
 import { Badge, Button, ErrorBoundary } from '../ui';
 
@@ -40,6 +43,7 @@ interface NavItem {
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { pendingChallengesCount, isStreaming, injectAttack } = useTelemetry();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [injecting, setInjecting] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -182,6 +186,20 @@ export const DashboardLayout: React.FC = () => {
                 <span>{pendingChallengesCount} Pending Approval{pendingChallengesCount > 1 ? 's' : ''}</span>
               </NavLink>
             )}
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to Lavender mode' : 'Switch to Dark mode'}
+              title={isDark ? 'Switch to Lavender Theme' : 'Switch to Dark Theme'}
+              className="p-2 text-lavender-text-secondary hover:text-lavender-900 dark:text-slate-400 dark:hover:text-white hover:bg-lavender-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-center border border-transparent hover:border-lavender-200 dark:hover:border-slate-700"
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-4 h-4 text-lavender-600 transition-transform hover:-rotate-12" />
+              )}
+            </button>
 
             {/* Operator Badge */}
             <div className="flex items-center gap-2 pl-2 border-l border-lavender-200">

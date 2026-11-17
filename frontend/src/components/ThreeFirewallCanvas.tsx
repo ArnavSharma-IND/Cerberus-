@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Shield, Zap, Eye, Lock, Flame, Activity, RotateCcw, Sparkles } from 'lucide-react';
+import { Shield, Zap, Eye, Lock, Flame, Activity, RotateCcw, Sparkles, Compass, Layers } from 'lucide-react';
 import { ToolCallEvent } from '../types';
+import { useTheme } from '../context/ThemeContext';
 
 export interface ThreeFirewallCanvasProps {
   events?: ToolCallEvent[];
@@ -77,6 +78,27 @@ export const PILLARS: PillarMeta[] = [
   }
 ];
 
+export const HORIZONTAL_OPTIONS = [
+  { value: 'auto', label: 'Auto-Orbit (360°)' },
+  { value: '0', label: '0° Front (Z-Axis Normal)' },
+  { value: '45', label: '45° Isometric NE' },
+  { value: '90', label: '90° East (Egress +X)' },
+  { value: '135', label: '135° Oblique SE' },
+  { value: '180', label: '180° Rear (Back -Z)' },
+  { value: '225', label: '225° Oblique SW' },
+  { value: '270', label: '270° West (Ingress -X)' },
+  { value: '315', label: '315° Oblique NW' },
+];
+
+export const VERTICAL_OPTIONS = [
+  { value: '85', label: '85° Top-Down DAG (Zenith)' },
+  { value: '60', label: '60° High Angle' },
+  { value: '45', label: '45° Tactical Pitch' },
+  { value: '30', label: '30° Standard Perspective' },
+  { value: '10', label: '10° Eye-Level Horizon' },
+  { value: '-15', label: '-15° Low-Angle Underneath' },
+];
+
 export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
   events = [],
   activeFeatureFocus = 'all',
@@ -92,7 +114,43 @@ export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
   const [lastShockwaveText, setLastShockwaveText] = useState<string>('Taint Provenance 1.0 BLOCK Override Active');
   const triggerShockwaveRef = useRef<((colorInt: number, ringIndex: number) => void) | null>(null);
 
-  const isLavender = theme === 'lavender';
+  let themeContext: { isDark: boolean; theme: string } | null = null;
+  try {
+    themeContext = useTheme();
+  } catch {
+    // fallback if mounted outside ThemeProvider
+  }
+  const isLavender = themeContext ? !themeContext.isDark : theme === 'lavender';
+
+  const [horizontalAngle, setHorizontalAngle] = useState<string>('auto');
+  const [verticalAngle, setVerticalAngle] = useState<string>('30');
+
+  const cameraStateRef = useRef({
+    horizontal: 'auto',
+    vertical: '30',
+    targetAzimuth: 0.35,
+    targetElevation: (30 * Math.PI) / 180,
+    azimuth: 0.35,
+    elevation: (30 * Math.PI) / 180,
+    isDragging: false,
+    distance: 9.2,
+  });
+
+  const handleHorizontalChange = (val: string) => {
+    setHorizontalAngle(val);
+    cameraStateRef.current.horizontal = val;
+    if (val !== 'auto' && val !== 'custom') {
+      cameraStateRef.current.targetAzimuth = (parseFloat(val) * Math.PI) / 180;
+    }
+  };
+
+  const handleVerticalChange = (val: string) => {
+    setVerticalAngle(val);
+    cameraStateRef.current.vertical = val;
+    if (val !== 'custom') {
+      cameraStateRef.current.targetElevation = (parseFloat(val) * Math.PI) / 180;
+    }
+  };
 
   useEffect(() => {
     const container = mountRef.current;
@@ -233,29 +291,34 @@ export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
     };
 
     // Mouse Drag Orbital Control
-    let isDragging = false;
     let prevX = 0;
     let prevY = 0;
-    let azimuth = 0.35;
-    let elevation = 0.48;
-    const distance = 9.2;
 
     const onMouseDown = (e: MouseEvent) => {
-      isDragging = true;
+      cameraStateRef.current.isDragging = true;
       prevX = e.clientX;
       prevY = e.clientY;
     };
     const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+      if (!cameraStateRef.current.isDragging) return;
       const dx = e.clientX - prevX;
       const dy = e.clientY - prevY;
       prevX = e.clientX;
       prevY = e.clientY;
-      azimuth -= dx * 0.007;
-      elevation = Math.max(0.12, Math.min(1.35, elevation + dy * 0.006));
+      cameraStateRef.current.azimuth -= dx * 0.007;
+      cameraStateRef.current.elevation = Math.max(-0.25, Math.min(1.48, cameraStateRef.current.elevation + dy * 0.006));
+
+      if (cameraStateRef.current.horizontal !== 'custom') {
+        cameraStateRef.current.horizontal = 'custom';
+        setHorizontalAngle('custom');
+      }
+      if (cameraStateRef.current.vertical !== 'custom') {
+        cameraStateRef.current.vertical = 'custom';
+        setVerticalAngle('custom');
+      }
     };
     const onMouseUp = () => {
-      isDragging = false;
+      cameraStateRef.current.isDragging = false;
     };
 
     const domElem = renderer.domElement;
@@ -267,20 +330,23 @@ export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
     const animate = () => {
       animId = requestAnimationFrame(animate);
 
-      if (!isDragging) {
-        azimuth += 0.0022;
+      const state = cameraStateRef.current;
+      if (!state.isDragging) {
+        if (state.horizontal === 'auto') {
+          state.azimuth += 0.0022;
+        } else if (state.horizontal !== 'custom') {
+          state.azimuth = THREE.MathUtils.lerp(state.azimuth, state.targetAzimuth, 0.08);
+        }
+
+        if (state.vertical !== 'custom') {
+          state.elevation = THREE.MathUtils.lerp(state.elevation, state.targetElevation, 0.08);
+        }
       }
 
-      if (cameraPreset === 'top') {
-        camera.position.lerp(new THREE.Vector3(0, 9.6, 0.8), 0.06);
-      } else if (cameraPreset === 'side') {
-        camera.position.lerp(new THREE.Vector3(0, 1.2, 10.2), 0.06);
-      } else {
-        const cx = distance * Math.sin(azimuth) * Math.cos(elevation);
-        const cy = distance * Math.sin(elevation);
-        const cz = distance * Math.cos(azimuth) * Math.cos(elevation);
-        camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.08);
-      }
+      const cx = state.distance * Math.sin(state.azimuth) * Math.cos(state.elevation);
+      const cy = state.distance * Math.sin(state.elevation);
+      const cz = state.distance * Math.cos(state.azimuth) * Math.cos(state.elevation);
+      camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.1);
       camera.lookAt(0, 0, 0);
 
       coreMesh.rotation.y += 0.008;
@@ -339,7 +405,7 @@ export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
       window.removeEventListener('resize', onResize);
       renderer.dispose();
     };
-  }, [cameraPreset, isLavender, height]);
+  }, [isLavender, height]);
 
   const handleSelectPillar = (pillar: PillarMeta, idx: number) => {
     setSelectedPillar(pillar);
@@ -396,50 +462,145 @@ export const ThreeFirewallCanvas: React.FC<ThreeFirewallCanvasProps> = ({
             </div>
           </div>
 
-          {/* Camera Controls */}
-          <div className="flex items-center space-x-2 text-xs font-mono">
-            <button
-              onClick={() => setCameraPreset('orbital')}
-              className={`px-3 py-1 rounded-lg border transition-all ${
-                cameraPreset === 'orbital'
-                  ? isLavender
-                    ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
-                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  : isLavender
-                  ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+          {/* Camera Controls & Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono">
+            {/* Horizontal Angle (Yaw) Dropdown */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${
+                isLavender
+                  ? 'bg-white/90 border-[#EDE9FE] text-[#171638] shadow-sm'
+                  : 'bg-slate-900/90 border-slate-800 text-slate-200'
               }`}
             >
-              3D Orbit
-            </button>
-            <button
-              onClick={() => setCameraPreset('top')}
-              className={`px-3 py-1 rounded-lg border transition-all ${
-                cameraPreset === 'top'
-                  ? isLavender
-                    ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
-                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  : isLavender
-                  ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              <Compass className={`w-3.5 h-3.5 ${isLavender ? 'text-[#6654E8]' : 'text-cyan-400'}`} />
+              <label htmlFor="horiz-angle-select" className="text-[10px] uppercase font-bold text-[#5B5882] dark:text-slate-400">
+                Yaw:
+              </label>
+              <select
+                id="horiz-angle-select"
+                value={horizontalAngle}
+                onChange={(e) => handleHorizontalChange(e.target.value)}
+                className={`bg-transparent text-xs font-semibold focus:outline-none cursor-pointer ${
+                  isLavender ? 'text-[#171638]' : 'text-slate-100'
+                }`}
+              >
+                {HORIZONTAL_OPTIONS.map((opt) => (
+                  <option
+                    key={opt.value}
+                    value={opt.value}
+                    className={isLavender ? 'bg-white text-[#171638]' : 'bg-[#0F172A] text-white'}
+                  >
+                    {opt.label}
+                  </option>
+                ))}
+                {horizontalAngle === 'custom' && (
+                  <option
+                    value="custom"
+                    className={isLavender ? 'bg-white text-[#171638]' : 'bg-[#0F172A] text-white'}
+                  >
+                    Custom (Mouse Orbit)
+                  </option>
+                )}
+              </select>
+            </div>
+
+            {/* Vertical Angle (Pitch) Dropdown */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${
+                isLavender
+                  ? 'bg-white/90 border-[#EDE9FE] text-[#171638] shadow-sm'
+                  : 'bg-slate-900/90 border-slate-800 text-slate-200'
               }`}
             >
-              Top DAG View
-            </button>
-            <button
-              onClick={() => setCameraPreset('side')}
-              className={`px-3 py-1 rounded-lg border transition-all ${
-                cameraPreset === 'side'
-                  ? isLavender
-                    ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
-                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                  : isLavender
-                  ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              Cross-Section
-            </button>
+              <Layers className={`w-3.5 h-3.5 ${isLavender ? 'text-[#6654E8]' : 'text-cyan-400'}`} />
+              <label htmlFor="vert-angle-select" className="text-[10px] uppercase font-bold text-[#5B5882] dark:text-slate-400">
+                Pitch:
+              </label>
+              <select
+                id="vert-angle-select"
+                value={verticalAngle}
+                onChange={(e) => handleVerticalChange(e.target.value)}
+                className={`bg-transparent text-xs font-semibold focus:outline-none cursor-pointer ${
+                  isLavender ? 'text-[#171638]' : 'text-slate-100'
+                }`}
+              >
+                {VERTICAL_OPTIONS.map((opt) => (
+                  <option
+                    key={opt.value}
+                    value={opt.value}
+                    className={isLavender ? 'bg-white text-[#171638]' : 'bg-[#0F172A] text-white'}
+                  >
+                    {opt.label}
+                  </option>
+                ))}
+                {verticalAngle === 'custom' && (
+                  <option
+                    value="custom"
+                    className={isLavender ? 'bg-white text-[#171638]' : 'bg-[#0F172A] text-white'}
+                  >
+                    Custom (Mouse Pitch)
+                  </option>
+                )}
+              </select>
+            </div>
+
+            {/* Quick Preset Buttons */}
+            <div className={`flex items-center space-x-1 pl-2 border-l ${isLavender ? 'border-[#EDE9FE]' : 'border-slate-800'}`}>
+              <button
+                onClick={() => {
+                  handleHorizontalChange('auto');
+                  handleVerticalChange('30');
+                  setCameraPreset('orbital');
+                }}
+                className={`px-2.5 py-1 rounded-lg border transition-all ${
+                  cameraPreset === 'orbital' && horizontalAngle === 'auto'
+                    ? isLavender
+                      ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : isLavender
+                    ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                3D Orbit
+              </button>
+              <button
+                onClick={() => {
+                  handleHorizontalChange('0');
+                  handleVerticalChange('85');
+                  setCameraPreset('top');
+                }}
+                className={`px-2.5 py-1 rounded-lg border transition-all ${
+                  cameraPreset === 'top' || (horizontalAngle === '0' && verticalAngle === '85')
+                    ? isLavender
+                      ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : isLavender
+                    ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                Top DAG View
+              </button>
+              <button
+                onClick={() => {
+                  handleHorizontalChange('90');
+                  handleVerticalChange('10');
+                  setCameraPreset('side');
+                }}
+                className={`px-2.5 py-1 rounded-lg border transition-all ${
+                  cameraPreset === 'side' || (horizontalAngle === '90' && verticalAngle === '10')
+                    ? isLavender
+                      ? 'bg-[#EDE9FE] text-[#6654E8] border-[#C4B5FD] font-semibold'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                    : isLavender
+                    ? 'bg-white text-[#5B5882] border-[#EDE9FE] hover:border-[#DDD6FE]'
+                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                }`}
+              >
+                Cross-Section
+              </button>
+            </div>
           </div>
         </div>
       )}

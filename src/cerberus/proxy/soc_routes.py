@@ -9,7 +9,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Body, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 
 from cerberus.config import settings
 from cerberus.detectors.canary import CanaryType
@@ -141,7 +141,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
     # ── 1. Operator Authentication & Sessions ────────────────────────────────
 
     @router.post("/api/auth/login")
-    async def soc_auth_login(payload: dict[str, Any] = Body(...)):
+    async def soc_auth_login(payload: dict[str, Any]):
         username = payload.get("username", "")
         password = payload.get("password")
         token = payload.get("token")
@@ -196,9 +196,10 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
     @router.post("/api/auth/logout")
     async def soc_auth_logout(
         authorization: str | None = Header(default=None, alias="Authorization"),
-        payload: dict[str, Any] = Body(default={}),
+        payload: dict[str, Any] | None = None,
     ):
-        raw_token = payload.get("token")
+        req_payload = payload or {}
+        raw_token = req_payload.get("token")
         if not raw_token and authorization and authorization.lower().startswith("bearer "):
             raw_token = authorization.split(" ", 1)[1].strip()
         if raw_token:
@@ -216,12 +217,12 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         try:
             storage_agents = await engine.storage.get_active_agents()
             agent_ids.update(storage_agents)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to fetch active storage agents: {e}")
 
         results = []
         for aid in sorted(agent_ids):
-            scopes = sorted(list(engine.scope_analyzer.agent_scopes.get(aid, set())))
+            scopes = sorted(engine.scope_analyzer.agent_scopes.get(aid, set()))
             enforced = engine.scope_analyzer.agent_enforced.get(aid, False)
             is_unverified = aid in engine.active_unverified_agents
             is_quarantined = (aid in engine.quarantined_sessions) or any(
@@ -235,7 +236,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
             baseline = engine.baseline_store.get_baseline(aid)
             try:
                 history = await engine.storage.get_agent_history(aid, limit=100)
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to fetch history for agent {aid}: {e}")
                 history = []
 
             results.append(
@@ -264,7 +266,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         return results
 
     @router.post("/api/agents")
-    async def soc_create_or_update_agent(payload: dict[str, Any] = Body(...)):
+    async def soc_create_or_update_agent(payload: dict[str, Any]):
         agent_id = payload.get("agent_id")
         if not agent_id:
             raise HTTPException(status_code=400, detail="agent_id is required")
@@ -280,7 +282,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         return {
             "status": "created",
             "agent_id": agent_id,
-            "allowed_tools": sorted(list(allowed_tools)),
+            "allowed_tools": sorted(allowed_tools),
             "enforced": enforced,
             "token": token,
             "ttl_seconds": ttl,
@@ -308,8 +310,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                 if sid.startswith(f"{agent_id}:") or sid == agent_id:
                     engine.quarantined_sessions.add(sid)
                     engine.contaminated_sessions.add(sid)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to query storage sessions during suspend: {e}")
         ACTIVE_QUARANTINES.set(len(engine.quarantined_sessions))
         return {
             "status": "suspended",
@@ -352,7 +354,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                         if ev.get("event_id") == event_id:
                             found_event = ev
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Audit log decryption error: {e}")
                         continue
             except Exception as e:
                 logger.debug(f"Audit log search failed: {e}")
@@ -369,8 +372,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                             break
                     if found_event:
                         break
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Storage session search error: {e}")
 
         # 3. Search in allowed events cache
         if not found_event:
@@ -502,8 +505,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                     "agent_id": aid,
                     "active_snapshot_id": b.active_snapshot_id,
                     "snapshots_count": len(b.snapshots),
-                    "known_tools": sorted(list(b.known_tools)),
-                    "known_destinations": sorted(list(b.known_destinations)),
+                    "known_tools": sorted(b.known_tools),
+                    "known_destinations": sorted(b.known_destinations),
                     "is_warm": b.is_warm,
                     "total_calls": b.total_calls_observed,
                     "snapshots": [
@@ -524,7 +527,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                     "baseline_value": 0.0,
                     "current_value": round(float(b.total_calls_observed) / 100.0, 2),
                     "drift_percent": 0.0 if not b.is_warm else 4.2,
-                    "status": "NORMAL" if not b.is_warm else "NORMAL",
+                    "status": "NORMAL",
                 }
             )
 
@@ -556,7 +559,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         if os.path.exists(policies_dir):
             for root, _, files in os.walk(policies_dir):
                 for f in sorted(files):
-                    if f.endswith(".rego") or f.endswith(".rego.disabled"):
+                    if f.endswith((".rego", ".rego.disabled")):
                         file_path = os.path.join(root, f)
                         rel_path = os.path.relpath(file_path, policies_dir)
                         try:
@@ -580,7 +583,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         }
 
     @router.post("/api/policies")
-    async def soc_create_policy(payload: dict[str, Any] = Body(...)):
+    async def soc_create_policy(payload: dict[str, Any]):
         name = payload.get("name", "").strip()
         code = payload.get("code", "").strip()
         if not name or not code:
@@ -596,7 +599,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
 
         opa_pushed = False
         try:
-            if name.endswith(".rego"):
+            if name.endswith(".rego") and engine.opa_client is not None:
                 policy_id = name.rsplit(".", 1)[0]
                 opa_pushed = await engine.opa_client.put_policy(policy_id, code)
         except Exception as e:
@@ -610,7 +613,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         }
 
     @router.put("/api/policies/{policy_name}")
-    async def soc_update_policy(policy_name: str, payload: dict[str, Any] = Body(...)):
+    async def soc_update_policy(policy_name: str, payload: dict[str, Any]):
         code = payload.get("code", "")
         target_path = os.path.join("policies", policy_name)
         if not os.path.exists(target_path):
@@ -620,11 +623,11 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
 
         opa_pushed = False
         try:
-            if policy_name.endswith(".rego"):
+            if policy_name.endswith(".rego") and engine.opa_client is not None:
                 policy_id = policy_name.rsplit(".", 1)[0]
                 opa_pushed = await engine.opa_client.put_policy(policy_id, code)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to update policy in OPA: {e}")
 
         return {"status": "updated", "name": policy_name, "opa_pushed": opa_pushed}
 
@@ -658,8 +661,10 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         raise HTTPException(status_code=404, detail=f"Policy '{policy_name}' not found")
 
     @router.post("/api/policies/dry-run")
-    async def soc_policy_dry_run(payload: dict[str, Any] = Body(...)):
+    async def soc_policy_dry_run(payload: dict[str, Any]):
         """Real dry-run simulation using engine.opa_client."""
+        if engine.opa_client is None:
+            raise HTTPException(status_code=503, detail="OPA client is not configured")
         event_data = payload.get("event", {})
         static_scan = payload.get("static_scan")
         overrides = payload.get("policy_overrides") or payload.get("overrides")
@@ -826,7 +831,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
                 try:
                     decrypted = engine.audit_logger.decrypt_log_line(line)
                     records.append(json.loads(decrypted))
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"Failed to decrypt log line: {e}")
                     continue
         except Exception as e:
             logger.warning(f"Failed to read audit log: {e}")
@@ -846,7 +852,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
             try:
                 decrypted = engine.audit_logger.decrypt_log_line(line)
                 records.append(json.loads(decrypted))
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to decrypt export line: {e}")
                 continue
         valid, count, err = engine.audit_logger.verify_integrity()
         return {
@@ -864,7 +871,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         return list(PREDEFINED_SCENARIOS.values())
 
     @router.post("/api/testing/run")
-    async def soc_run_scenario(payload: dict[str, Any] = Body(...)):
+    async def soc_run_scenario(payload: dict[str, Any]):
         scenario_id = payload.get("scenario_id")
         steps = payload.get("steps")
 
@@ -956,8 +963,8 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
             try:
                 content = await asyncio.to_thread(_read_file_sync, eval_path)
                 benchmarks.update(json.loads(content))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to load evaluation benchmark cache: {e}")
 
         now = time.time()
         latency_history = [
@@ -1030,7 +1037,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
         }
 
     @router.put("/api/system/config")
-    async def soc_update_config(payload: dict[str, Any] = Body(...)):
+    async def soc_update_config(payload: dict[str, Any]):
         editable_fields = {
             "mode",
             "debug",
@@ -1050,7 +1057,7 @@ def create_soc_router(engine: CerberusProxyEngine) -> APIRouter:
             "trifecta_override",
             "block_threshold",
         }
-        updated = {}
+        updated: dict[str, Any] = {}
         for k, v in payload.items():
             if k == "block_threshold":
                 settings.risk_block_threshold = float(v)

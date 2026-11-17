@@ -217,9 +217,8 @@ class AdminAuthManager:
         # Check default operator credentials (admin/admin, admin/cerberus, operator/cerberus, secops/cerberus)
         valid_passwords = {"cerberus", "admin", "password", "secops"}
         if username_clean in self._operators:
-            if not pwd_clean and not tok_clean:
-                if not configured_admin_token:
-                    return True, self._operators[username_clean], "Authenticated default operator"
+            if not pwd_clean and not tok_clean and not configured_admin_token:
+                return True, self._operators[username_clean], "Authenticated default operator"
             if pwd_clean in valid_passwords or pwd_clean == username_clean:
                 return (
                     True,
@@ -377,6 +376,6 @@ class AdminAuthManager:
             if len(parts) >= 3:
                 session_id = parts[2]
                 return self._sessions.pop(session_id, None) is not None
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to revoke session token: {e}")
         return False
