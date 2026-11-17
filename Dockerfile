@@ -16,13 +16,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml README.md ./
-RUN uv pip install --system -e .
-
 COPY src/ ./src
 COPY policies/ ./policies
 
+RUN uv pip install --system -e .
+
 # Copy compiled frontend from Stage 1 into the location expected by FastAPI
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Ensure Python can always locate the cerberus package
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
 
 # Non-root security posture
 RUN adduser --disabled-password --gecos '' cerberus && chown -R cerberus:cerberus /app
