@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cerberus-firewall
+    runtime: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: APP_NAME
+        value: Cerberus
+      - key: MODE
+        value: enforce
+      - key: FAIL_CLOSED
+        value: "true"
